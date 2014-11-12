@@ -1,7 +1,11 @@
 package hunternif.jgitversion;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -24,46 +28,150 @@ import org.gitective.core.filter.commit.CommitCountFilter;
 
 public class JGitVersionTask extends Task {
 	private String dir;
-	private String property;
+	private String versionProperty;
+	private String shaProperty;
+	private String branchProperty;
+	private String funnameProperty;
+	private String adjFile;
+	private String nameFile;
+	private String propertiesFileName;
+	private String baseBranch;
 	
 	public void setDir(String dir) {
 		this.dir = dir;
 	}
-	public void setProperty(String property) {
-		this.property = property;
+
+	
+	public void setBaseBranch(String baseBranch) {
+		this.baseBranch = baseBranch;
+	}
+
+	public void setVersionString(String property) {
+		this.versionProperty = property;
 	}
 	
+
+	public void setSha1String(String property) {
+		this.shaProperty = property;
+	}
+	
+	public void setFunNameString(String property) {
+		this.funnameProperty = property;
+	}
+
+
+	public void setBranchString(String property) {
+		this.branchProperty = property;
+	}
+
+	public void setNameFile(String nameFile) {
+		this.nameFile = nameFile;
+	}
+
+	public void setPropertiesFileName(String nameFile) {
+		this.propertiesFileName= nameFile;
+	}
+
+	public void setAdjectiveFile(String adjFile) {
+		this.adjFile = adjFile;
+	}
+
 	@Override
 	public void execute() throws BuildException {
 		try {
-			String version = getProjectVersion(new File(dir));
+    		git = Git.open(new File(dir));
+    		repo = git.getRepository();
+    		String branch = repo.getBranch();
+    		RevCommit latestCommit = CommitUtils.getHead(repo);
+			String version = getProjectVersion(repo, git, baseBranch);
+			List<String> adjs = readWords(this.adjFile);
+			List<String> names = readWords(this.nameFile);
+		
+    		Iterable<RevCommit> log = git.log().call();
+    		log.iterator().next();
+
+			String lastCommit = latestCommit.name();
+			int i = Integer.parseInt(lastCommit.substring(0, 5),16);
+			String adj = adjs.get(i % adjs.size());
+
+			int ll = lastCommit.length();
+			int j = Integer.parseInt(lastCommit.substring(6, 10),16);
+			String name = names.get(j % names.size());
+
 			Project project = getProject();
 			if (project != null) {
-				project.setProperty(property, version);
+				project.setProperty(versionProperty, version);
+				project.setProperty(branchProperty, branch);
+				project.setProperty(this.shaProperty,latestCommit.name());
+				project.setProperty(this.funnameProperty, adj+" "+name);
 			}
 		} catch (Exception e) {
 			throw new BuildException(e);
 		}
 	}
 	
+
+    public List<String> readWords(String fileName) {
+    	if ((fileName == null) || (fileName.equalsIgnoreCase("")))
+    			return null;
+        List<String> list = new ArrayList<String>();
+        File file = new File(fileName);
+        BufferedReader reader = null;
+
+        try {
+            reader = new BufferedReader(new FileReader(file));
+            String text = null;
+
+            while ((text = reader.readLine()) != null) {
+                String[] adjs = text.split(" ", 8);
+                list.add(adjs[0]);
+                if(adjs.length >1)
+                	list.add(adjs[adjs.length-1]);
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+            } catch (IOException e) {
+            }
+        }
+        return list;
+    }
+
+
+    private Repository repo;
+	private Git git;
+    
+
 	public static String getProjectVersion(File repoDir) throws IOException, GitAPIException {
-		Git git = Git.open(repoDir);
-		Repository repo = git.getRepository();
+    		Git git = Git.open(repoDir);
+    		Repository repo = git.getRepository();
+    		return getProjectVersion(repo, git, "master");
+	}
+	public static String getProjectVersion(Repository repo, Git git, String baseBranch)
+	throws IOException, GitAPIException {
 		
-		// Find base commit between current branch and "master":
+		// Find base commit between current branch and baseBranch.
+		// baseBranch is typically "master" but could be something else e.g. "develop"
+		
 		String branch = repo.getBranch();
-		RevCommit base = CommitUtils.getBase(repo, "master", branch);
+		RevCommit base = CommitUtils.getBase(repo, baseBranch, branch);
 		CommitCountFilter count = new CommitCountFilter();
 		CommitFinder finder = new CommitFinder(repo).setFilter(count);
 		finder.findBetween(branch, base);
 		long commitsSinceBase = count.getCount();
 		
-		// Find tags in "master" before base commit:
+		// Find tags in baseBranch before base commit:
 		RevWalk rw = new RevWalk(repo);
 		rw.markStart(base);
 		rw.setRetainBody(false);
-		Ref master = repo.getRef("master");
-		List<Ref> masterAsList = Arrays.asList(master);
+		Ref baseRef = repo.getRef(baseBranch);
+		List<Ref> masterAsList = Arrays.asList(baseRef);
 		List<Ref> tags = git.tagList().call();
 		Map<RevCommit, Ref> masterTags = new HashMap<RevCommit, Ref>();
 		for (Ref tag : tags) {
@@ -95,7 +203,7 @@ public class JGitVersionTask extends Task {
 		long commitsSinceLastMasterTag = commitsSinceBase + commitsBetweenBaseAndTag;
 		
 		// Construct version string:
-		String version = branch.equals("master") ? "" : (branch + "-");
+		String version = branch.equals(baseBranch) ? "" : (branch + "-");
 		if (tagName.startsWith("refs/tags/")) {
 			tagName = tagName.substring("refs/tags/".length());
 		}
@@ -103,6 +211,17 @@ public class JGitVersionTask extends Task {
 		if (tagName.matches("v\\d+.*")) {
 			tagName = tagName.substring(1);
 		}
+		
+		// ver1.1 -> 1.1
+		if (tagName.matches("ver\\d+.*")) {
+			tagName = tagName.substring(3);
+		}
+		
+		// Wawa-Version-1.1 -> 1.1
+		if (tagName.matches("(?i)Wawa-Version-\\d+.*")) {
+			tagName = tagName.substring(13);
+		}
+
 		if (tagName.isEmpty()) {
 			version = "0";
 		}

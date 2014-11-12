@@ -11,10 +11,22 @@
 		</taskdef>
 	</target>
 
-	<target name="version" depends="declare">
-		<jgitversion dir="." property="build.version"/>
-		<echo message="${build.version}"/>
-	</target>
+    <target name="version" depends="declare">
+       <jgitversion dir="."
+                    versionstring="build.version"
+                    basebranch="master"
+                    sha1string="build.sha1"
+                    branchstring="build.branch"
+                    funnamestring="build.funname"
+                    namefile="../../../script/names"
+                    adjectivefile="../../../script/adjectives"
+                    />
+        <echo message="${build.version}"/>
+        <echo message="${build.sha1}"/>
+        <echo message="${build.branch}"/>
+        <echo message="${build.funname}"/>
+    </target>
+
 	
 	<target name="build">
 		<delete dir="bin"/>
