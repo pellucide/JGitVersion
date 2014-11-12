@@ -177,10 +177,19 @@ public class JGitVersionTask extends Task {
 		for (Ref tag : tags) {
 			tag = repo.peel(tag);
 			ObjectId commitID = tag.getPeeledObjectId();
-			if (commitID == null) continue;
+			//System.out.println("found tag="+tag);
+			//System.out.println("found tag.getName()="+tag.getName());
+			//System.out.println("found tag.getLeaf().getName()="+tag.getLeaf().getName());
+			//System.out.println("found tag.getObjectId().getName()="+tag.getObjectId().getName());
+			//System.out.println("found commitID="+commitID);
+			if (commitID == null) {
+				//this is a lightweight tag
+				commitID=tag.getObjectId();
+			}
 			RevCommit commit = rw.parseCommit(commitID);
 			// Only remember tags reachable from "master":
 			if (!RevWalkUtils.findBranchesReachableFrom(commit, rw, masterAsList).isEmpty()) {
+				//System.out.println("adding tag="+tag.getName());
 				masterTags.put(commit, tag);
 			}
 		}
@@ -204,6 +213,7 @@ public class JGitVersionTask extends Task {
 		
 		// Construct version string:
 		String version = branch.equals(baseBranch) ? "" : (branch + "-");
+		//System.out.println(tagName);
 		if (tagName.startsWith("refs/tags/")) {
 			tagName = tagName.substring("refs/tags/".length());
 		}
@@ -218,7 +228,7 @@ public class JGitVersionTask extends Task {
 		}
 		
 		// Wawa-Version-1.1 -> 1.1
-		if (tagName.matches("(?i)Wawa-Version-\\d+.*")) {
+		if (tagName.matches("(?i)wawa-version-\\d+.*")) {
 			tagName = tagName.substring(13);
 		}
 
