@@ -4,7 +4,7 @@ Versioning with Git
 As I was working with a team on a project using Git, I decided to somehow automate labeling builds like `projectname-1.0.3.516`. With SVN this is easily achieved as each revision has its ordinal number, but in Git a revision is instead indentified by a SHA hash, and branching is used commonly and extensively, which further complicates things. So I searched around on StackOverflow and composed the following workflow:
 
 * Any "milestone" version changes (i.e. first 2 or 3 numbers) are set manually via tags on branch `master`.
-* Each commit on the current branch subsequent to the last tag on `master` adds to the build number. Lightweight tags are ignored.
+* Each commit on the current branch subsequent to the last tag on `master` adds to the build number. Lightweight tags are also supported.
 * If building from a separate branch, its name should be included in the version.
 
 > Example:  
