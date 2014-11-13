@@ -1,47 +1,46 @@
 <?xml version="1.0"?>
-<project name="JGitVersion" default="build-release">
+<project name="JGitVersion" basedir="." default="build-release">
+    <dirname property="gitversion.basedir" file="${ant.file.JGitVersion}"/>
+    <property name="git.basedir" value="."/>
+    <property name="git.basebranch" value="master"/>
+
 	
 	<target name="declare" depends="build">
 		<taskdef name="jgitversion" classname="hunternif.jgitversion.JGitVersionTask">
 			<classpath>
-				<pathelement path="bin"/>
-                <pathelement path="lib/gitective/gitective-core-0.9.9.jar"/>
-                <pathelement path="lib/jgit/org.eclipse.jgit_2.2.0.201212191850-r.jar"/>
+				<pathelement path="${gitversion.basedir}/bin"/>
+                <pathelement path="${gitversion.basedir}/lib/gitective/gitective-core-0.9.9.jar"/>
+                <pathelement path="${gitversion.basedir}/lib/jgit/org.eclipse.jgit_2.2.0.201212191850-r.jar"/>
             </classpath>
 		</taskdef>
 	</target>
 
-    <target name="version" depends="declare">
-       <jgitversion dir="."
+    <target name="gitversion" depends="declare">
+       <jgitversion dir="${git.basedir}"
                     versionstring="build.version"
-                    basebranch="master"
+                    basebranch="${git.basebranch}"
                     sha1string="build.sha1"
                     branchstring="build.branch"
                     funnamestring="build.funname"
-                    namefile="../../../script/names"
-                    adjectivefile="../../../script/adjectives"
-                    />
-        <echo message="${build.version}"/>
-        <echo message="${build.sha1}"/>
-        <echo message="${build.branch}"/>
-        <echo message="${build.funname}"/>
+                    namefile="${gitversion.basedir}/../../../script/names"
+                    adjectivefile="${gitversion.basedir}/../../../script/adjectives" />
     </target>
 
 	
 	<target name="build">
-		<delete dir="bin"/>
-		<mkdir dir="bin"/>
-		<javac srcdir="src" destdir="bin">
+		<delete dir="${gitversion.basedir}/bin"/>
+		<mkdir dir="${gitversion.basedir}/bin"/>
+		<javac srcdir="${gitversion.basedir}/src" destdir="${gitversion.basedir}/bin">
 			<classpath>
-			    <pathelement path="lib/gitective/gitective-core-0.9.9.jar"/>
-			    <pathelement path="lib/jgit/org.eclipse.jgit_2.2.0.201212191850-r.jar"/>
+			    <pathelement path="${gitversion.basedir}/lib/gitective/gitective-core-0.9.9.jar"/>
+			    <pathelement path="${gitversion.basedir}/lib/jgit/org.eclipse.jgit_2.2.0.201212191850-r.jar"/>
 			</classpath>
 		</javac>
 	</target>
 	
-	<target name="build-release" depends="version">
-		<mkdir dir="build"/>
-		<jar destfile="build/jgitversion-${build.version}.jar" basedir="bin"/>
+	<target name="build-release" depends="gitversion">
+		<mkdir dir="${gitversion.basedir}/build"/>
+		<jar destfile="${gitversion.basedir}/build/jgitversion-${build.version}.jar" basedir="bin"/>
 	</target>
 
 </project>
