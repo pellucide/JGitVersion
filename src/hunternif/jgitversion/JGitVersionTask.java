@@ -79,6 +79,7 @@ public class JGitVersionTask extends Task {
 	@Override
 	public void execute() throws BuildException {
 		try {
+            System.out.println("dir="+out+"=");
     		git = Git.open(new File(dir));
     		repo = git.getRepository();
     		String branch = repo.getBranch();
