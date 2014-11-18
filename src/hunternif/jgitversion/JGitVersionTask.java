@@ -176,8 +176,8 @@ public class JGitVersionTask extends Task {
         System.out.println("branch="+branch+"=");
 		Ref baseRef = repo.getRef(baseBranch);
         System.out.println("baseRef="+baseRef.getObjectId().getName()+"=");
-		//RevCommit base = CommitUtils.getBase(repo, baseBranch, branch);
-		RevCommit base = CommitUtils.getBase(repo, baseRef.getObjectId().getName(), branch);
+		RevCommit base = CommitUtils.getBase(repo, baseBranch, branch);
+		//RevCommit base = CommitUtils.getBase(repo, baseRef.getObjectId().getName(), branch);
 		CommitCountFilter count = new CommitCountFilter();
 		CommitFinder finder = new CommitFinder(repo).setFilter(count);
 		finder.findBetween(branch, base);
