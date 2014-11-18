@@ -124,9 +124,12 @@ public class JGitVersionTask extends Task {
 
             while ((text = reader.readLine()) != null) {
                 String[] adjs = text.split(" ", 8);
-                list.add(adjs[0]);
-                if(adjs.length >1)
-                	list.add(adjs[adjs.length-1]);
+                if (!isEmpty(adjs[0]))
+                    list.add(adjs[0]);
+                if(adjs.length >1) {
+                    if (!isEmpty(adjs[1]))
+                        list.add(adjs[adjs.length-1]);
+                }
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -142,6 +145,14 @@ public class JGitVersionTask extends Task {
         }
         return list;
     }
+
+    public static boolean isEmpty(CharSequence str) {
+        if (str == null || str.length() == 0)
+            return true;
+        else
+            return false;
+    }
+
 
 
     private Repository repo;
