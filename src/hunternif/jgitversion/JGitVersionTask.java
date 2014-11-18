@@ -172,6 +172,8 @@ public class JGitVersionTask extends Task {
 		// baseBranch is typically "master" but could be something else e.g. "develop"
 		
 		String branch = repo.getBranch();
+        System.out.println("baseBranch="+baseBranch+"=");
+        System.out.println("branch="+branch+"=");
 		RevCommit base = CommitUtils.getBase(repo, baseBranch, branch);
 		CommitCountFilter count = new CommitCountFilter();
 		CommitFinder finder = new CommitFinder(repo).setFilter(count);
