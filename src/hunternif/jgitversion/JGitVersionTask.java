@@ -174,7 +174,10 @@ public class JGitVersionTask extends Task {
 		String branch = repo.getBranch();
         System.out.println("baseBranch="+baseBranch+"=");
         System.out.println("branch="+branch+"=");
-		RevCommit base = CommitUtils.getBase(repo, baseBranch, branch);
+		Ref baseRef = repo.getRef(baseBranch);
+        System.out.println("baseRef="+baseRef.getObjectId().getName()+"=");
+		//RevCommit base = CommitUtils.getBase(repo, baseBranch, branch);
+		RevCommit base = CommitUtils.getBase(repo, baseRef.getObjectId().getName(), branch);
 		CommitCountFilter count = new CommitCountFilter();
 		CommitFinder finder = new CommitFinder(repo).setFilter(count);
 		finder.findBetween(branch, base);
@@ -184,7 +187,6 @@ public class JGitVersionTask extends Task {
 		RevWalk rw = new RevWalk(repo);
 		rw.markStart(base);
 		rw.setRetainBody(false);
-		Ref baseRef = repo.getRef(baseBranch);
 		List<Ref> masterAsList = Arrays.asList(baseRef);
 		List<Ref> tags = git.tagList().call();
 		Map<RevCommit, Ref> masterTags = new HashMap<RevCommit, Ref>();
@@ -201,7 +203,7 @@ public class JGitVersionTask extends Task {
 				commitID=tag.getObjectId();
 			}
 			RevCommit commit = rw.parseCommit(commitID);
-			// Only remember tags reachable from "master":
+			// Only remember tags reachable from "baseBranch":
 			if (!RevWalkUtils.findBranchesReachableFrom(commit, rw, masterAsList).isEmpty()) {
 				//System.out.println("adding tag="+tag.getName());
 				masterTags.put(commit, tag);
